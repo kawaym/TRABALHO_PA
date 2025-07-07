@@ -52,6 +52,10 @@ contract DegreeSystem {
     event ProfessorRegistered(address indexed sender_addr);
     event CourseRegistered(string indexed code, address indexed sender_addr);
     event ClassRegistered(uint256 indexed id, address indexed sender_addr);
+    event StudentWasEnrolled(
+        uint256 indexed classId,
+        uint256 indexed studentEnrollment
+    );
 
     // MODIFIERS
     modifier onlyStudent(uint256 enrollment) {
@@ -131,5 +135,22 @@ contract DegreeSystem {
         emit ClassRegistered(nextClassId, msg.sender);
 
         nextClassId++;
+    }
+
+    function enrollStudent(
+        uint256 classId,
+        uint256 studentEnrollment
+    ) external onlyStudent(studentEnrollment) {
+        uint256[] memory enrolled = classes[classId].enrolledStudents;
+        for (uint256 i = 0; i < enrolled.length; i++) {
+            require(
+                classes[classId].enrolledStudents[i] != studentEnrollment,
+                "Student already enrolled"
+            );
+        }
+
+        classes[classId].enrolledStudents.push(studentEnrollment);
+
+        emit StudentWasEnrolled(classId, studentEnrollment);
     }
 }
