@@ -9,13 +9,6 @@ contract DegreeSystem {
         bool itExists;
     }
 
-    struct Degree {
-        uint256 classId;
-        uint256 studentEnrollment;
-        uint256 value;
-        bool itExists;
-    }
-
     struct Professor {
         string name;
         address professor_addr;
@@ -37,12 +30,19 @@ contract DegreeSystem {
         bool itExists;
     }
 
+    struct Degree {
+        uint256 classId;
+        uint256 studentEnrollment;
+        uint256 value;
+        bool itExists;
+    }
+
     // MAPPINGS
     mapping(uint256 => Student) public students;
-    mapping(bytes32 => Degree) public degrees;
     mapping(address => Professor) public professors;
     mapping(string => Course) public courses;
     mapping(uint => Class) public classes;
+    mapping(bytes32 => Degree) public degrees;
 
     // EVENTS
     event StudentRegistered(
@@ -55,6 +55,17 @@ contract DegreeSystem {
     event StudentWasEnrolled(
         uint256 indexed classId,
         uint256 indexed studentEnrollment
+    );
+    event degreeWasAssigned(
+        uint256 indexed classId,
+        uint256 indexed studentEnrollment,
+        uint256 degree
+    );
+    event degreeWasAltered(
+        uint256 indexed classId,
+        uint256 indexed studentEnrollment,
+        uint256 oldDegree,
+        uint256 degree
     );
 
     // MODIFIERS
@@ -73,6 +84,25 @@ contract DegreeSystem {
             "Only registered professors can perform this action"
         );
         require(msg.sender != address(0), "Invalid address");
+        _;
+    }
+
+    modifier onlyClassProfessor(uint256 classId) {
+        require(classes[classId].itExists, "Class not found");
+        require(
+            classes[classId].professor == msg.sender,
+            "Only the professors of this class can perform this action"
+        );
+        _;
+    }
+
+    modifier studentExists(uint256 studentEnrollment) {
+        require(students[studentEnrollment].itExists, "Student not found");
+        _;
+    }
+
+    modifier isValidDegree(uint256 degree) {
+        require(degree <= 1000, "Degree must be between 0 and 1000");
         _;
     }
 
@@ -152,5 +182,59 @@ contract DegreeSystem {
         classes[classId].enrolledStudents.push(studentEnrollment);
 
         emit StudentWasEnrolled(classId, studentEnrollment);
+    }
+
+    function assignDegree(
+        uint256 classId,
+        uint256 studentEnrollment,
+        uint256 degree
+    )
+        external
+        onlyProfessor
+        onlyClassProfessor(classId)
+        studentExists(studentEnrollment)
+        isValidDegree(degree)
+    {
+        bytes32 hashDegree = keccak256(
+            abi.encodePacked(classId, studentEnrollment)
+        );
+        require(
+            !degrees[hashDegree].itExists,
+            "Degree already assigned. Use alterDegree to alter"
+        );
+
+        degrees[hashDegree] = Degree({
+            classId: classId,
+            studentEnrollment: studentEnrollment,
+            value: degree,
+            itExists: true
+        });
+
+        emit degreeWasAssigned(classId, studentEnrollment, degree);
+    }
+
+    function alterDegree(
+        uint256 classId,
+        uint256 studentEnrollment,
+        uint256 degree
+    )
+        external
+        onlyProfessor
+        onlyClassProfessor(classId)
+        studentExists(studentEnrollment)
+        isValidDegree(degree)
+    {
+        bytes32 hashDegree = keccak256(
+            abi.encodePacked(classId, studentEnrollment)
+        );
+        require(
+            !degrees[hashDegree].itExists,
+            "Degree was not yet assigned. Use assignDegree to assign"
+        );
+
+        uint256 oldDegree = degrees[hashDegree].value;
+        degrees[hashDegree].value = degree;
+
+        emit degreeWasAltered(classId, studentEnrollment, oldDegree, degree);
     }
 }
