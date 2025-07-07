@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 contract DegreeSystem {
     // DATA STRUCTURES
     struct Student {
-        string privateName;
+        string name;
         uint256 enrollment;
         bool itExists;
     }
@@ -41,7 +41,7 @@ contract DegreeSystem {
     mapping(uint256 => Student) public students;
     mapping(address => Professor) public professors;
     mapping(string => Course) public courses;
-    mapping(uint => Class) public classes;
+    mapping(uint256 => Class) public classes;
     mapping(bytes32 => Degree) public degrees;
 
     // EVENTS
@@ -114,13 +114,20 @@ contract DegreeSystem {
     // UTILS
     uint256 public nextClassId = 1;
 
+    function createHashDegree(
+        uint256 classId,
+        uint256 studentEnrollment
+    ) private pure returns (bytes32) {
+        return keccak256(abi.encodePacked(classId, studentEnrollment));
+    }
+
     // FUNCTIONS
     function RegisterStudent(uint256 enrollment, string memory name) external {
         require(!students[enrollment].itExists, "Student already registered");
         require(bytes(name).length > 0, "Name cannot be empty");
 
         students[enrollment] = Student({
-            privateName: name,
+            name: name,
             enrollment: enrollment,
             itExists: true
         });
@@ -200,17 +207,10 @@ contract DegreeSystem {
         studentExists(studentEnrollment)
         isValidDegree(degree)
     {
-        bytes32 hashDegree = keccak256(
-            abi.encodePacked(classId, studentEnrollment)
-        );
+        bytes32 hashDegree = createHashDegree(classId, studentEnrollment);
         require(
             !degrees[hashDegree].itExists,
             "Degree already assigned. Use alterDegree to alter"
-        );
-
-        require(
-            isStudentEnrolled(classId, studentEnrollment),
-            "This student is not enrolled in this class"
         );
 
         degrees[hashDegree] = Degree({
@@ -234,9 +234,7 @@ contract DegreeSystem {
         studentExists(studentEnrollment)
         isValidDegree(degree)
     {
-        bytes32 hashDegree = keccak256(
-            abi.encodePacked(classId, studentEnrollment)
-        );
+        bytes32 hashDegree = createHashDegree(classId, studentEnrollment);
         require(
             !degrees[hashDegree].itExists,
             "Degree was not yet assigned. Use assignDegree to assign"
@@ -260,5 +258,58 @@ contract DegreeSystem {
         }
 
         return false;
+    }
+
+    function seeDegree(
+        uint256 classId,
+        uint256 studentEnrollment
+    )
+        external
+        view
+        studentExists(studentEnrollment)
+        classExists(classId)
+        returns (uint256, bool)
+    {
+        bytes32 hashDegree = createHashDegree(classId, studentEnrollment);
+        if (degrees[hashDegree].itExists) {
+            return (degrees[hashDegree].value, true);
+        }
+        return (0, false);
+    }
+
+    function seeAllDegreesClass(
+        uint256 classId
+    )
+        external
+        view
+        onlyProfessor
+        onlyClassProfessor(classId)
+        classExists(classId)
+        returns (uint256[] memory enrollments, uint256[] memory values)
+    {
+        uint256[] memory enrolled = classes[classId].enrolledStudents;
+        uint256 counter = 0;
+
+        for (uint256 i = 0; i < enrolled.length; i++) {
+            bytes32 hashDegree = createHashDegree(classId, enrolled[i]);
+            if (degrees[hashDegree].itExists) {
+                counter++;
+            }
+        }
+
+        enrollments = new uint256[](counter);
+        values = new uint256[](counter);
+
+        uint256 index = 0;
+        for (uint256 i = 0; i < enrolled.length; i++) {
+            bytes32 hashDegree = createHashDegree(classId, enrolled[i]);
+            if (degrees[hashDegree].itExists) {
+                enrollments[index] = enrolled[i];
+                values[index] = degrees[hashDegree].value;
+                index++;
+            }
+        }
+
+        return (enrollments, values);
     }
 }
