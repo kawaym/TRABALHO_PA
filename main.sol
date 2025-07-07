@@ -124,4 +124,13 @@ contract DegreeSystem {
 
         nextClassId++;
     }
+
+    struct Degree {
+        uint256 classId;
+        uint256 studentEnrollment;
+        uint256 value;
+        bool itExists;
+    }
+
+    mapping(bytes32 => Degree) public degrees;
 }
