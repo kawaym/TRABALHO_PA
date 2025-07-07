@@ -4,24 +4,24 @@ pragma solidity ^0.8.0;
 contract DegreeSystem {
     struct Student {
         string privateName;
-        uint enrollment;
+        uint256 enrollment;
         bool itExists;
     }
 
-    mapping(uint => Student) public students;
+    mapping(uint256 => Student) public students;
 
     event StudentRegistered(
-        uint indexed enrollment,
+        uint256 indexed enrollment,
         address indexed sender_addr
     );
 
-    modifier onlyStudent(uint enrollment) {
+    modifier onlyStudent(uint256 enrollment) {
         require(students[enrollment].itExists, "Student not found");
         require(msg.sender != address(0), "Invalid address");
         _;
     }
 
-    function RegisterStudent(uint enrollment, string memory name) external {
+    function RegisterStudent(uint256 enrollment, string memory name) external {
         require(!students[enrollment].itExists, "Student already registered");
         require(bytes(name).length > 0, "Name cannot be empty");
 
@@ -36,30 +36,55 @@ contract DegreeSystem {
 
     struct Professor {
         string name;
-        uint identifier;
+        address professor_addr;
         bool itExists;
     }
 
-    mapping(uint => Professor) public professors;
+    mapping(address => Professor) public professors;
 
-    event ProfessorRegistered(uint indexed identifier, address indexed sender_addr);
+    event ProfessorRegistered(address indexed sender_addr);
 
-    modifier onlyProfessor(uint identifier) {
-        require(professors[identifier].itExists, "Professor not found");
+    modifier onlyProfessor(uint256 identifier) {
+        require(professors[msg.sender].itExists, "Professor not found");
         require(msg.sender != address(0), "Invalid address");
         _;
     }
 
-    function RegisterProfessor(uint identifier, string memory name) external {
-        require(!professors[identifier].itExists, "Professor already registered");
-        require(bytes[name].length > 0, "Invalid address");
+    function RegisterProfessor(string memory name) external {
+        require(
+            !professors[msg.sender].itExists,
+            "Professor already registered"
+        );
+        require(bytes(name).length > 0, "Name cannot be empty");
 
-        professors[identifier] = Professor({
+        professors[msg.sender] = Professor({
             name: name,
-            identifier: identifier,
-            itExists: true
+            itExists: true,
+            professor_addr: msg.sender
         });
 
-        emit ProfessorRegistered(identifier, msg.sender)
+        emit ProfessorRegistered(msg.sender);
+    }
+
+    struct Course {
+        string name;
+        string code; // Should use the type used by the university
+        bool itExists;
+    }
+
+    mapping(string => Course) public courses;
+
+    event CourseRegistered(string indexed code, address indexed sender_addr);
+
+    function RegisterCourse(string memory name, string memory code) external {
+        require(
+            professors[msg.sender].itExists,
+            "Only registered professors can perform this action"
+        );
+        require(!courses[code].itExists, "Course already registered");
+
+        courses[code] = Course({name: name, code: code, itExists: true});
+
+        emit CourseRegistered(code, msg.sender);
     }
 }
