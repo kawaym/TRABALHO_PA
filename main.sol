@@ -33,4 +33,33 @@ contract DegreeSystem {
 
         emit StudentRegistered(enrollment, msg.sender);
     }
+
+    struct Professor {
+        string name;
+        uint identifier;
+        bool itExists;
+    }
+
+    mapping(uint => Professor) public professors;
+
+    event ProfessorRegistered(uint indexed identifier, address indexed sender_addr);
+
+    modifier onlyProfessor(uint identifier) {
+        require(professors[identifier].itExists, "Professor not found");
+        require(msg.sender != address(0), "Invalid address");
+        _;
+    }
+
+    function RegisterProfessor(uint identifier, string memory name) external {
+        require(!professors[identifier].itExists, "Professor already registered");
+        require(bytes[name].length > 0, "Invalid address");
+
+        professors[identifier] = Professor({
+            name: name,
+            identifier: identifier,
+            itExists: true
+        });
+
+        emit ProfessorRegistered(identifier, msg.sender)
+    }
 }
