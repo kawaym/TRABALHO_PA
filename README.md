@@ -65,7 +65,7 @@ Saída esperada:
   DegreeSystem
     ✔ should enroll a student
     ✔ should assign and alter degree
-    ✔ should list all degrees in a class
+    ✔ should list all degrees for all enrolled students in a class
 ```
 
 ## 📦 Deploy

@@ -32,4 +32,21 @@ describe("DegreeSystem", function () {
         [value] = await degreeSystem.seeDegree(1, 1001);
         expect(value).to.equal(800);
     });
+
+    it("should list all degrees for all enrolled students in a class", async () => {
+        // Enroll and assign degrees
+        await degreeSystem.connect(student1).enrollStudent(1, 1001);
+        await degreeSystem.connect(student2).enrollStudent(1, 1002);
+
+        await degreeSystem.connect(professor).assignDegree(1, 1001, 900);
+        await degreeSystem.connect(professor).assignDegree(1, 1002, 750);
+
+        const result = await degreeSystem.connect(professor).seeAllDegreesClass(1);
+
+        const enrollments = result[0].map(n => Number(n));
+        const values = result[1].map(n => Number(n));
+
+        expect(enrollments).to.include.members([1001, 1002]);
+        expect(values).to.include.members([900, 750]);
+    });
 });
