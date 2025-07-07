@@ -2,19 +2,58 @@
 pragma solidity ^0.8.0;
 
 contract DegreeSystem {
+    // DATA STRUCTURES
     struct Student {
         string privateName;
         uint256 enrollment;
         bool itExists;
     }
 
-    mapping(uint256 => Student) public students;
+    struct Degree {
+        uint256 classId;
+        uint256 studentEnrollment;
+        uint256 value;
+        bool itExists;
+    }
 
+    struct Professor {
+        string name;
+        address professor_addr;
+        bool itExists;
+        uint256[] classesIds;
+    }
+
+    struct Course {
+        string name;
+        string code; // Should use the type used by the university
+        bool itExists;
+    }
+
+    struct Class {
+        string courseCode;
+        address professor;
+        uint256[] enrolledStudents;
+        uint256 id;
+        bool itExists;
+    }
+
+    // MAPPINGS
+    mapping(uint256 => Student) public students;
+    mapping(bytes32 => Degree) public degrees;
+    mapping(address => Professor) public professors;
+    mapping(string => Course) public courses;
+    mapping(uint => Class) public classes;
+
+    // EVENTS
     event StudentRegistered(
         uint256 indexed enrollment,
         address indexed sender_addr
     );
+    event ProfessorRegistered(address indexed sender_addr);
+    event CourseRegistered(string indexed code, address indexed sender_addr);
+    event ClassRegistered(uint256 indexed id, address indexed sender_addr);
 
+    // MODIFIERS
     modifier onlyStudent(uint256 enrollment) {
         require(
             students[enrollment].itExists,
@@ -24,6 +63,19 @@ contract DegreeSystem {
         _;
     }
 
+    modifier onlyProfessor() {
+        require(
+            professors[msg.sender].itExists,
+            "Only registered professors can perform this action"
+        );
+        require(msg.sender != address(0), "Invalid address");
+        _;
+    }
+
+    // UTILS
+    uint256 public nextClassId = 1;
+
+    // FUNCTIONS
     function RegisterStudent(uint256 enrollment, string memory name) external {
         require(!students[enrollment].itExists, "Student already registered");
         require(bytes(name).length > 0, "Name cannot be empty");
@@ -35,26 +87,6 @@ contract DegreeSystem {
         });
 
         emit StudentRegistered(enrollment, msg.sender);
-    }
-
-    struct Professor {
-        string name;
-        address professor_addr;
-        bool itExists;
-        uint256[] classesIds;
-    }
-
-    mapping(address => Professor) public professors;
-
-    event ProfessorRegistered(address indexed sender_addr);
-
-    modifier onlyProfessor() {
-        require(
-            professors[msg.sender].itExists,
-            "Only registered professors can perform this action"
-        );
-        require(msg.sender != address(0), "Invalid address");
-        _;
     }
 
     function RegisterProfessor(string memory name) external {
@@ -74,16 +106,6 @@ contract DegreeSystem {
         emit ProfessorRegistered(msg.sender);
     }
 
-    struct Course {
-        string name;
-        string code; // Should use the type used by the university
-        bool itExists;
-    }
-
-    mapping(string => Course) public courses;
-
-    event CourseRegistered(string indexed code, address indexed sender_addr);
-
     function RegisterCourse(
         string memory name,
         string memory code
@@ -94,20 +116,6 @@ contract DegreeSystem {
 
         emit CourseRegistered(code, msg.sender);
     }
-
-    struct Class {
-        string courseCode;
-        address professor;
-        uint256[] enrolledStudents;
-        uint256 id;
-        bool itExists;
-    }
-
-    uint256 public nextClassId = 1;
-
-    mapping(uint => Class) public classes;
-
-    event ClassRegistered(uint256 indexed id, address indexed sender_addr);
 
     function RegisterClass(string memory courseCode) external onlyProfessor {
         require(courses[courseCode].itExists, "This course does not exist");
@@ -124,13 +132,4 @@ contract DegreeSystem {
 
         nextClassId++;
     }
-
-    struct Degree {
-        uint256 classId;
-        uint256 studentEnrollment;
-        uint256 value;
-        bool itExists;
-    }
-
-    mapping(bytes32 => Degree) public degrees;
 }
