@@ -87,4 +87,38 @@ contract DegreeSystem {
 
         emit CourseRegistered(code, msg.sender);
     }
+
+    struct Class {
+        string courseCode;
+        address professor;
+        uint256[] enrolledStudents;
+        uint256 id;
+        bool itExists;
+    }
+
+    uint256 public nextClassId = 1;
+
+    mapping(uint => Class) public classes;
+
+    event ClassRegistered(uint256 indexed id, address indexed sender_addr);
+
+    function RegisterClass(string memory courseCode) external {
+        require(
+            professors[msg.sender].itExists,
+            "Only registered professors can perform this action"
+        );
+        require(courses[courseCode].itExists, "This course does not exist");
+
+        classes[nextClassId] = Class({
+            courseCode: courseCode,
+            professor: msg.sender,
+            enrolledStudents: new uint256[](0),
+            itExists: true,
+            id: nextClassId
+        });
+
+        emit ClassRegistered(nextClassId, msg.sender);
+
+        nextClassId++;
+    }
 }
