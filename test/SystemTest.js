@@ -7,7 +7,6 @@ describe("DegreeSystem", function () {
         [owner, professor, student1, student2] = await ethers.getSigners();
         const DegreeSystem = await ethers.getContractFactory("DegreeSystem");
         degreeSystem = await DegreeSystem.deploy();
-        await degreeSystem.deployed();
 
         await degreeSystem.connect(professor).RegisterProfessor("Prof. Alice");
         await degreeSystem.connect(student1).RegisterStudent(1001, "Student One");
