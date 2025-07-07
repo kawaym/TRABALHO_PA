@@ -101,6 +101,11 @@ contract DegreeSystem {
         _;
     }
 
+    modifier classExists(uint256 classId) {
+        require(classes[classId].itExists, "Class not found");
+        _;
+    }
+
     modifier isValidDegree(uint256 degree) {
         require(degree <= 1000, "Degree must be between 0 and 1000");
         _;
@@ -203,6 +208,11 @@ contract DegreeSystem {
             "Degree already assigned. Use alterDegree to alter"
         );
 
+        require(
+            isStudentEnrolled(classId, studentEnrollment),
+            "This student is not enrolled in this class"
+        );
+
         degrees[hashDegree] = Degree({
             classId: classId,
             studentEnrollment: studentEnrollment,
@@ -236,5 +246,19 @@ contract DegreeSystem {
         degrees[hashDegree].value = degree;
 
         emit degreeWasAltered(classId, studentEnrollment, oldDegree, degree);
+    }
+
+    function isStudentEnrolled(
+        uint256 classId,
+        uint256 studentEnrollment
+    ) public view classExists(classId) returns (bool) {
+        uint256[] memory enrolled = classes[classId].enrolledStudents;
+        for (uint256 i = 0; i < enrolled.length; i++) {
+            if (enrolled[i] == studentEnrollment) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
