@@ -16,7 +16,10 @@ contract DegreeSystem {
     );
 
     modifier onlyStudent(uint256 enrollment) {
-        require(students[enrollment].itExists, "Student not found");
+        require(
+            students[enrollment].itExists,
+            "Only registered students can perform this action"
+        );
         require(msg.sender != address(0), "Invalid address");
         _;
     }
@@ -38,14 +41,18 @@ contract DegreeSystem {
         string name;
         address professor_addr;
         bool itExists;
+        uint256[] classesIds;
     }
 
     mapping(address => Professor) public professors;
 
     event ProfessorRegistered(address indexed sender_addr);
 
-    modifier onlyProfessor(uint256 identifier) {
-        require(professors[msg.sender].itExists, "Professor not found");
+    modifier onlyProfessor() {
+        require(
+            professors[msg.sender].itExists,
+            "Only registered professors can perform this action"
+        );
         require(msg.sender != address(0), "Invalid address");
         _;
     }
@@ -60,7 +67,8 @@ contract DegreeSystem {
         professors[msg.sender] = Professor({
             name: name,
             itExists: true,
-            professor_addr: msg.sender
+            professor_addr: msg.sender,
+            classesIds: new uint256[](0)
         });
 
         emit ProfessorRegistered(msg.sender);
@@ -76,11 +84,10 @@ contract DegreeSystem {
 
     event CourseRegistered(string indexed code, address indexed sender_addr);
 
-    function RegisterCourse(string memory name, string memory code) external {
-        require(
-            professors[msg.sender].itExists,
-            "Only registered professors can perform this action"
-        );
+    function RegisterCourse(
+        string memory name,
+        string memory code
+    ) external onlyProfessor {
         require(!courses[code].itExists, "Course already registered");
 
         courses[code] = Course({name: name, code: code, itExists: true});
@@ -102,11 +109,7 @@ contract DegreeSystem {
 
     event ClassRegistered(uint256 indexed id, address indexed sender_addr);
 
-    function RegisterClass(string memory courseCode) external {
-        require(
-            professors[msg.sender].itExists,
-            "Only registered professors can perform this action"
-        );
+    function RegisterClass(string memory courseCode) external onlyProfessor {
         require(courses[courseCode].itExists, "This course does not exist");
 
         classes[nextClassId] = Class({
