@@ -236,7 +236,7 @@ contract DegreeSystem {
     {
         bytes32 hashDegree = createHashDegree(classId, studentEnrollment);
         require(
-            !degrees[hashDegree].itExists,
+            degrees[hashDegree].itExists,
             "Degree was not yet assigned. Use assignDegree to assign"
         );
 
